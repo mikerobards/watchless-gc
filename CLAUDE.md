@@ -6,23 +6,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 WatchLess is a full-stack application consisting of two main components:
 
-- **Client** (`/client`): React application built with Create React App that provides a timer interface for tracking TV watching sessions. Uses Material-UI for components and implements push notifications via service workers.
-- **Server** (`/server`): Express.js server that handles session data persistence to Google Sheets and manages push notification subscriptions using web-push.
+- **Client** (`/client`): React application built with Create React App that provides a timer interface for tracking TV watching sessions. Uses Material-UI for components and implements modal-based "still watching" reminders with audio notifications.
+- **Server** (`/server`): Express.js server that handles session data persistence to Google Sheets.
 
 ### Key Technical Details
 
-- **Frontend**: React 19.1.1 with Material-UI, implements progressive web app features with service workers
-- **Backend**: Express.js server on port 3001 with CORS enabled for local development  
+- **Frontend**: React 19.1.1 with Material-UI, implements modal-based user interface
+- **Backend**: Express.js server with Google Sheets API integration
 - **Data Storage**: Google Sheets API integration for session tracking (requires `credentials.json`)
-- **Notifications**: Web Push API implementation with VAPID keys for "still watching" reminders
-- **Timer Logic**: Hardcoded 10-second timeout for testing notifications in production
+- **User Reminders**: Modal dialog with audio notification for "still watching" prompts
+- **Timer Logic**: Hardcoded 10-second timeout for testing modal reminders
+- **Time Formatting**: Session times automatically formatted as HH:MM:SS in Google Sheets
+- **Cloud Deployment**: Deployed on Google Cloud Run with pre-built React files
 
-### Communication Flow
+### Application Flow
 
-1. Client subscribes to push notifications when timer starts
-2. Server stores subscription and triggers notifications after timeout
-3. Session data (time watched, show name) is saved to Google Sheets when timer stops
-4. Push notifications prompt user with "Still watching?" messages
+1. User starts timer for watching session
+2. After 10 seconds, modal dialog appears with audio notification asking "Still watching?"
+3. User can choose to continue or stop watching
+4. Session data (time watched, show name) is saved to Google Sheets when timer stops
+5. Time is automatically formatted from seconds to HH:MM:SS format (e.g., 73 seconds → 00:01:13)
 
 ## Development Commands
 
@@ -38,14 +41,21 @@ WatchLess is a full-stack application consisting of two main components:
 
 ## Configuration Requirements
 
-- **Google Sheets API**: Requires `server/credentials.json` with service account keys
-- **Push Notifications**: VAPID keys are hardcoded in both client and server files
-- **Spreadsheet ID**: Hardcoded in `server/index.js:9` for Google Sheets integration
+- **Google Sheets API**: Requires `server/credentials.json` with service account keys for local development
+- **Spreadsheet ID**: Configurable via environment variable or hardcoded fallback
 - **CORS**: Configured for local development (client on 3000, server on 3001)
+- **Cloud Run**: Service account authentication used automatically in production
 
 ## Running the Application
 
+### Local Development
 1. Start server: `cd server && npm start`
 2. Start client: `cd client && npm start` 
 3. Client connects to server at `http://localhost:3001`
-4. Requires notification permissions for full functionality
+4. Audio notifications work automatically (no permissions required)
+
+### Production Deployment
+- Deployed on Google Cloud Run: https://watchless-972793137170.us-central1.run.app
+- Uses `standalone.js` as entry point (defined in Dockerfile)
+- Pre-built React files served from `server/public/`
+- Google Sheets integration via Cloud Run service account

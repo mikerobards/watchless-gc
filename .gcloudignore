@@ -1,45 +1,31 @@
-# Node.js dependencies
+# Ignore node_modules but keep source files
 node_modules/
-npm-debug.log
+*/node_modules/
 
-# Client development files
-client/node_modules/
-client/npm-debug.log
-client/src/
-client/public/
-client/.gitignore
+# Keep pre-built React files for deployment
+# client/build/
+# server/public/
 
-# Development and testing
+# Development and testing files
 .git/
-.gitignore
+.env*
 README.md
-.env
-.env.local
-.env.example
+*.md
+coverage/
+.nyc_output/
+*.log
 
-# IDE files
+# IDE and OS files  
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# OS files
 .DS_Store
 Thumbs.db
 
-# Logs
-logs/
-*.log
-
-# Build artifacts (client build will be copied to server/public)
-client/build/
-
-# Testing
-coverage/
-.nyc_output/
-
-# Optional npm cache directory
-.npm
-
-# Optional REPL history
-.node_repl_history
+# Keep these important files:
+# client/src/
+# client/public/
+# client/package.json
+# client/package-lock.json
+# server/

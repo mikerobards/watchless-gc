@@ -15,13 +15,18 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 async function getAuth() {
-  const auth = new google.auth.GoogleAuth({
-    // In Cloud Run, use service account attached to the service
-    // or credentials from environment variables
-    scopes: 'https://www.googleapis.com/auth/spreadsheets',
-  });
-  const client = await auth.getClient();
-  return google.sheets({ version: 'v4', auth: client });
+  try {
+    const auth = new google.auth.GoogleAuth({
+      // In Cloud Run, use service account attached to the service
+      // or credentials from environment variables
+      scopes: 'https://www.googleapis.com/auth/spreadsheets',
+    });
+    const client = await auth.getClient();
+    return google.sheets({ version: 'v4', auth: client });
+  } catch (error) {
+    console.warn('Google Auth not available:', error.message);
+    return null;
+  }
 }
 
 // Health check endpoint for Cloud Run
@@ -40,7 +45,30 @@ app.post('/api/save-session', async (req, res) => {
 
   try {
     const sheets = await getAuth();
-    const newRow = [new Date().toLocaleDateString(), time, showName];
+    
+    if (!sheets) {
+      console.warn('Google Sheets not available, session data not saved');
+      res.status(200).send({ 
+        message: 'Session received (Google Sheets not configured)', 
+        data: { time, showName, timestamp: new Date().toISOString() }
+      });
+      return;
+    }
+
+    // Convert seconds to HH:MM:SS format
+    console.log('Raw time received:', time, 'seconds');
+    const hours = Math.floor(time / 3600);
+    const minutes = Math.floor((time % 3600) / 60);
+    const seconds = time % 60;
+    const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    console.log('Formatted time:', formattedTime);
+    
+    // Also create a decimal time value for Google Sheets (fraction of a day)
+    const decimalTime = time / 86400; // 86400 seconds in a day
+    console.log('Decimal time for Google Sheets:', decimalTime);
+    
+    const newRow = [new Date().toLocaleDateString(), formattedTime, decimalTime, showName];
+    console.log('Row to be saved:', newRow);
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
@@ -48,6 +76,7 @@ app.post('/api/save-session', async (req, res) => {
       valueInputOption: 'USER_ENTERED',
       resource: {
         values: [newRow],
+        majorDimension: 'ROWS'
       },
     });
 

@@ -20,8 +20,8 @@ README.md
 .DS_Store
 Thumbs.db
 
-# Build artifacts that will be built in container
-client/build/
+# Keep pre-built React files for deployment
+# client/build/
 
 # Testing
 coverage/

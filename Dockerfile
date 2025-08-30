@@ -1,43 +1,85 @@
-# Multi-stage build optimized for Cloud Run
-FROM node:18-alpine AS client-builder
-
-# Build client
-WORKDIR /app/client
-COPY client/package*.json ./
-RUN npm ci --only=production --silent
-COPY client/ .
-RUN npm run build
-
-# Server stage
-FROM node:18-alpine AS server
+# Simple single-stage build for Cloud Run
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Install server dependencies
-COPY server/package*.json ./
-RUN npm ci --only=production --silent
+# Copy everything
+COPY . .
 
-# Copy server source
-COPY server/ .
+# Debug what we have in build context
+RUN echo "=== Root contents ===" && ls -la
+RUN echo "=== Client directory check ===" && \
+    if [ -d "client" ]; then \
+      echo "Client directory exists, contents:" && \
+      ls -la client/ && \
+      echo "Looking for package.json:" && \
+      ls -la client/package.json || echo "No package.json in client/" && \
+      echo "Looking for src directory:" && \
+      ls -la client/src/ || echo "No src directory in client/"; \
+    else \
+      echo "No client directory found"; \
+    fi
+RUN echo "=== Server contents ===" && ls -la server/ || echo "No server dir"
 
-# Copy built client files to serve as static content
-COPY --from=client-builder /app/client/build ./public
+# Skip React build - using pre-built files from server/public/
+RUN echo "=== Using Pre-built React Files ===" && \
+    echo "Checking for pre-built React files in server/public/" && \
+    ls -la server/public/ && \
+    if [ -f "server/public/index.html" ]; then \
+      echo "✅ Pre-built React app found in server/public/"; \
+    else \
+      echo "❌ No pre-built React files found"; \
+      exit 1; \
+    fi
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+# Install server dependencies (including Google APIs)
+RUN if [ -d "server" ] && [ -f "server/package.json" ]; then \
+      echo "Installing server deps with Google APIs support..." && \
+      cd server && \
+      echo "=== Server package.json ===" && \
+      cat package.json && \
+      echo "=== Running npm install ===" && \
+      npm install && \
+      echo "=== Checking Google APIs module ===" && \
+      ls -la node_modules/googleapis/ | head -3 || echo "googleapis not found" && \
+      echo "=== Checking Express module ===" && \
+      ls -la node_modules/express/ | head -3 || echo "express not found"; \
+    else \
+      echo "Error: No server directory or package.json"; \
+      ls -la server/ || echo "No server directory"; \
+      exit 1; \
+    fi
 
-# Set ownership of app directory
-RUN chown -R nodejs:nodejs /app
-USER nodejs
+# Set working directory to server first
+WORKDIR /app/server
 
-# Cloud Run uses PORT environment variable
+# Verify React files are already in place
+RUN echo "=== Verifying React Files in Public Directory ===" && \
+    echo "Contents of public directory:" && \
+    ls -la ./public/ && \
+    if [ -f "./public/index.html" ]; then \
+      echo "✅ React index.html found" && \
+      echo "✅ React build successfully available"; \
+    else \
+      echo "❌ React files not found in public directory" && \
+      exit 1; \
+    fi
+
+# Expose port and set environment
 EXPOSE 8080
 ENV PORT=8080
 ENV NODE_ENV=production
 
-# Health check endpoint
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:8080/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+# Debug final setup
+RUN echo "=== Final server setup ===" && \
+    pwd && \
+    ls -la && \
+    echo "=== Public directory ===" && \
+    ls -la ./public/ 2>/dev/null || echo "No public directory" && \
+    echo "=== Package.json check ===" && \
+    ls -la package.json && \
+    echo "=== Node modules check ===" && \
+    ls -la node_modules/ | head -5
 
-CMD ["node", "index.js"]
+# Use standalone server with Google Sheets integration
+CMD ["node", "standalone.js"]

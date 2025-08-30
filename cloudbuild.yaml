@@ -20,18 +20,21 @@ steps:
     args: [
       'run', 'deploy', 'watchless',
       '--image', 'gcr.io/$PROJECT_ID/watchless:$COMMIT_SHA',
-      '--platform', 'managed',
       '--region', 'us-central1',
       '--allow-unauthenticated',
       '--port', '8080',
       '--memory', '512Mi',
-      '--cpu', '1',
-      '--min-instances', '0',
+      '--cpu', '1000m',
       '--max-instances', '10',
-      '--timeout', '300s'
+      '--timeout', '300s',
+      '--set-env-vars', 'NODE_ENV=production'
     ]
 
 timeout: '1200s'
+
+# Logging configuration (required when using custom service account)
+options:
+  logging: CLOUD_LOGGING_ONLY
 
 substitutions:
   _SERVICE_NAME: watchless
