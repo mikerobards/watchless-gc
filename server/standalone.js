@@ -128,9 +128,17 @@ async function saveToGoogleSheets(sessionData) {
     const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || '1DLhsYv2YBgth7wQI2i37sX0QvmEj3ig9LMeMRryioyY';
     const { time, showName } = sessionData;
     
+    // Convert seconds to HH:MM:SS format
+    console.log('Raw time received:', time, 'seconds');
+    const hours = Math.floor(time / 3600);
+    const minutes = Math.floor((time % 3600) / 60);
+    const seconds = time % 60;
+    const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    console.log('Formatted time:', formattedTime);
+    
     const values = [[
       new Date().toLocaleDateString(),
-      time,
+      formattedTime,
       showName || 'Unknown Show'
     ]];
     
@@ -155,7 +163,7 @@ async function saveToGoogleSheets(sessionData) {
         res.on('end', () => {
           if (res.statusCode >= 200 && res.statusCode < 300) {
             console.log('✅ Successfully saved to Google Sheets');
-            console.log('📊 Saved data:', { date: new Date().toLocaleDateString(), time, showName });
+            console.log('📊 Saved data:', { date: new Date().toLocaleDateString(), time: formattedTime, showName });
             resolve(true);
           } else {
             console.error('❌ Google Sheets API error:', res.statusCode, responseData);
