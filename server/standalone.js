@@ -2,14 +2,76 @@
 const http = require('http');
 const url = require('url');
 const path = require('path');
+const fs = require('fs');
 
 const port = process.env.PORT || 8080;
 
-console.log('=== Starting Standalone Server ===');
+console.log('=== Starting Standalone Server with React Support ===');
 console.log('Port:', port);
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('Working directory:', process.cwd());
 console.log('__dirname:', __dirname);
+
+// Check for React build files
+const publicPath = path.join(__dirname, 'public');
+console.log('Checking for React files at:', publicPath);
+
+let hasReactApp = false;
+let reactFiles = [];
+
+try {
+  if (fs.existsSync(publicPath)) {
+    reactFiles = fs.readdirSync(publicPath);
+    hasReactApp = reactFiles.includes('index.html');
+    console.log('✅ Public directory found with files:', reactFiles.slice(0, 10));
+    console.log('✅ React app available:', hasReactApp);
+  } else {
+    console.log('❌ No public directory found');
+  }
+} catch (error) {
+  console.log('Error checking React files:', error.message);
+}
+
+// MIME type helper
+const getMimeType = (filePath) => {
+  const ext = path.extname(filePath).toLowerCase();
+  const mimeTypes = {
+    '.html': 'text/html',
+    '.js': 'text/javascript',
+    '.css': 'text/css',
+    '.json': 'application/json',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.ico': 'image/x-icon',
+    '.svg': 'image/svg+xml',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+    '.ttf': 'font/ttf',
+    '.eot': 'application/vnd.ms-fontobject'
+  };
+  return mimeTypes[ext] || 'application/octet-stream';
+};
+
+// Serve static file helper
+const serveStaticFile = (filePath, res) => {
+  try {
+    if (fs.existsSync(filePath)) {
+      const content = fs.readFileSync(filePath);
+      const mimeType = getMimeType(filePath);
+      
+      res.writeHead(200, { 
+        'Content-Type': mimeType,
+        'Cache-Control': 'public, max-age=31536000' // 1 year cache for static assets
+      });
+      res.end(content);
+      return true;
+    }
+  } catch (error) {
+    console.error('Error serving static file:', error);
+  }
+  return false;
+};
 
 // Simple HTTP server
 const server = http.createServer((req, res) => {
@@ -88,14 +150,23 @@ const server = http.createServer((req, res) => {
     return;
   }
   
-  // Root endpoint
+  // Root endpoint - serve React app if available, otherwise fallback
   if (pathname === '/' || pathname === '/index.html') {
+    if (hasReactApp) {
+      const indexPath = path.join(publicPath, 'index.html');
+      console.log(`Serving React app index.html from: ${indexPath}`);
+      if (serveStaticFile(indexPath, res)) {
+        return;
+      }
+    }
+    
+    // Fallback HTML if React app not available
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end(`
       <!DOCTYPE html>
       <html>
       <head>
-        <title>WatchLess - Standalone Server</title>
+        <title>WatchLess - Server</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 40px; }
           .container { max-width: 600px; margin: 0 auto; }
@@ -107,11 +178,10 @@ const server = http.createServer((req, res) => {
       <body>
         <div class="container">
           <h1>🕐 WatchLess Server</h1>
-          <p><strong>Status:</strong> Running (Standalone Mode)</p>
+          <p><strong>Status:</strong> Running</p>
+          <p><strong>React App:</strong> ${hasReactApp ? '✅ Available' : '❌ Not built/found'}</p>
           <p><strong>Port:</strong> ${port}</p>
-          <p><strong>Environment:</strong> ${process.env.NODE_ENV || 'development'}</p>
           <p><strong>Time:</strong> ${new Date().toISOString()}</p>
-          <p><strong>Uptime:</strong> ${Math.floor(process.uptime())} seconds</p>
           
           <h2>Available Endpoints:</h2>
           <div class="endpoint">
@@ -123,16 +193,37 @@ const server = http.createServer((req, res) => {
           <div class="endpoint">
             <strong>POST /api/save-session</strong> - Save timer session data
           </div>
-          
-          <h2>Next Steps:</h2>
-          <p>✅ Server is running successfully</p>
-          <p>⏳ React app integration coming next</p>
-          <p>⏳ Google Sheets integration coming next</p>
         </div>
       </body>
       </html>
     `);
     return;
+  }
+  
+  // Serve static React files
+  if (hasReactApp && pathname.startsWith('/static/')) {
+    const staticPath = path.join(publicPath, pathname);
+    console.log(`Serving static file: ${staticPath}`);
+    if (serveStaticFile(staticPath, res)) {
+      return;
+    }
+  }
+  
+  // Handle other React assets (js, css, etc.)
+  if (hasReactApp) {
+    const assetPath = path.join(publicPath, pathname);
+    if (serveStaticFile(assetPath, res)) {
+      return;
+    }
+  }
+  
+  // Catch-all for React Router (SPA routing)
+  if (hasReactApp && !pathname.startsWith('/api/')) {
+    const indexPath = path.join(publicPath, 'index.html');
+    console.log(`React Router catch-all for ${pathname} -> serving index.html`);
+    if (serveStaticFile(indexPath, res)) {
+      return;
+    }
   }
   
   // 404 for everything else
@@ -143,6 +234,7 @@ const server = http.createServer((req, res) => {
     <body>
       <h1>404 - Page Not Found</h1>
       <p>Path: ${pathname}</p>
+      <p>React App: ${hasReactApp ? 'Available' : 'Not found'}</p>
       <p><a href="/">← Back to Home</a></p>
     </body>
     </html>
