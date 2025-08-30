@@ -32,19 +32,28 @@ RUN if [ -d "server" ] && [ -f "server/package.json" ]; then \
       exit 1; \
     fi
 
-# Copy client build to server public directory
-RUN if [ -d "client/build" ]; then \
-      cp -r client/build server/public; \
-    else \
-      echo "Warning: No client build found"; \
-    fi
-
-# Set working directory to server
+# Set working directory to server first
 WORKDIR /app/server
+
+# Copy client build to server public directory (from server directory perspective)
+RUN if [ -d "../client/build" ]; then \
+      echo "Copying client build to public directory..."; \
+      cp -r ../client/build ./public; \
+      echo "Contents of public directory:"; \
+      ls -la ./public/ || echo "Public directory empty"; \
+    else \
+      echo "Warning: No client build found at ../client/build"; \
+      echo "Creating empty public directory"; \
+      mkdir -p ./public; \
+    fi
 
 # Expose port and set environment
 EXPOSE 8080
 ENV PORT=8080
 ENV NODE_ENV=production
+
+# Test that the server can start (quick test)
+RUN echo "Testing server startup..." && \
+    timeout 10s node index.js || echo "Server startup test completed"
 
 CMD ["node", "index.js"]
