@@ -69,5 +69,5 @@ RUN echo "=== Final server setup ===" && \
     echo "=== Node modules check ===" && \
     ls -la node_modules/ | head -5
 
-# Use the safer server with lazy-loaded dependencies
-CMD ["node", "safe-index.js"]
+# Use minimal working server for now
+CMD ["node", "minimal-test.js"]
