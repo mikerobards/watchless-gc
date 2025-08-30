@@ -15,13 +15,18 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 async function getAuth() {
-  const auth = new google.auth.GoogleAuth({
-    // In Cloud Run, use service account attached to the service
-    // or credentials from environment variables
-    scopes: 'https://www.googleapis.com/auth/spreadsheets',
-  });
-  const client = await auth.getClient();
-  return google.sheets({ version: 'v4', auth: client });
+  try {
+    const auth = new google.auth.GoogleAuth({
+      // In Cloud Run, use service account attached to the service
+      // or credentials from environment variables
+      scopes: 'https://www.googleapis.com/auth/spreadsheets',
+    });
+    const client = await auth.getClient();
+    return google.sheets({ version: 'v4', auth: client });
+  } catch (error) {
+    console.warn('Google Auth not available:', error.message);
+    return null;
+  }
 }
 
 // Health check endpoint for Cloud Run
@@ -40,6 +45,16 @@ app.post('/api/save-session', async (req, res) => {
 
   try {
     const sheets = await getAuth();
+    
+    if (!sheets) {
+      console.warn('Google Sheets not available, session data not saved');
+      res.status(200).send({ 
+        message: 'Session received (Google Sheets not configured)', 
+        data: { time, showName, timestamp: new Date().toISOString() }
+      });
+      return;
+    }
+
     const newRow = [new Date().toLocaleDateString(), time, showName];
 
     await sheets.spreadsheets.values.append({

@@ -69,5 +69,5 @@ RUN echo "=== Final server setup ===" && \
     echo "=== Node modules check ===" && \
     ls -la node_modules/ | head -5
 
-# Test with minimal server first
-CMD ["node", "minimal-test.js"]
+# Use the fixed original server
+CMD ["node", "index.js"]
