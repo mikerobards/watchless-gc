@@ -11,8 +11,8 @@ RUN echo "=== Client directory ===" && ls -la ./client/ || echo "client director
 
 # Build client
 WORKDIR /app/client
-RUN npm ci --only=production --silent
-RUN npm run build
+RUN echo "=== Installing client dependencies ===" && npm ci --silent
+RUN echo "=== Building client ===" && npm run build
 
 # Server stage
 FROM node:18-alpine AS server
@@ -24,7 +24,7 @@ COPY . .
 
 # Install server dependencies
 WORKDIR /app/server
-RUN npm ci --only=production --silent
+RUN echo "=== Installing server dependencies ===" && npm ci --only=production --silent
 
 # Copy built client files to serve as static content
 COPY --from=client-builder /app/client/build ./public
