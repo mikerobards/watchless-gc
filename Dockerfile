@@ -6,9 +6,19 @@ WORKDIR /app
 # Copy everything
 COPY . .
 
-# Debug what we have
+# Debug what we have in build context
 RUN echo "=== Root contents ===" && ls -la
-RUN echo "=== Client contents ===" && ls -la client/ || echo "No client dir"
+RUN echo "=== Client directory check ===" && \
+    if [ -d "client" ]; then \
+      echo "Client directory exists, contents:" && \
+      ls -la client/ && \
+      echo "Looking for package.json:" && \
+      ls -la client/package.json || echo "No package.json in client/" && \
+      echo "Looking for src directory:" && \
+      ls -la client/src/ || echo "No src directory in client/"; \
+    else \
+      echo "No client directory found"; \
+    fi
 RUN echo "=== Server contents ===" && ls -la server/ || echo "No server dir"
 
 # Build React client with detailed logging
