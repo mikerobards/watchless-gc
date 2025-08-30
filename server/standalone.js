@@ -1,5 +1,6 @@
 // Standalone server using only Node.js built-in modules
 const http = require('http');
+const https = require('https');
 const url = require('url');
 const path = require('path');
 const fs = require('fs');
@@ -73,6 +74,117 @@ const serveStaticFile = (filePath, res) => {
   return false;
 };
 
+// Google Sheets integration using Cloud Run service account
+async function getAccessToken() {
+  try {
+    // Get access token from metadata service (available in Cloud Run)
+    const tokenUrl = 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token?scopes=https://www.googleapis.com/auth/spreadsheets';
+    
+    return new Promise((resolve, reject) => {
+      const req = http.get(tokenUrl, {
+        headers: { 'Metadata-Flavor': 'Google' }
+      }, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          try {
+            const tokenData = JSON.parse(data);
+            console.log('✅ Access token obtained from metadata service');
+            resolve(tokenData.access_token);
+          } catch (error) {
+            console.warn('❌ Failed to parse token response:', error.message);
+            resolve(null);
+          }
+        });
+      });
+      
+      req.on('error', (error) => {
+        console.warn('❌ Failed to get access token:', error.message);
+        resolve(null);
+      });
+      
+      req.setTimeout(5000, () => {
+        console.warn('❌ Token request timeout');
+        req.destroy();
+        resolve(null);
+      });
+    });
+  } catch (error) {
+    console.warn('❌ Error getting access token:', error.message);
+    return null;
+  }
+}
+
+async function saveToGoogleSheets(sessionData) {
+  try {
+    console.log('🔄 Attempting to save to Google Sheets...');
+    
+    const accessToken = await getAccessToken();
+    if (!accessToken) {
+      console.warn('❌ No access token available - Google Sheets not configured');
+      return false;
+    }
+    
+    const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || '1DLhsYv2YBgth7wQI2i37sX0QvmEj3ig9LMeMRryioyY';
+    const { time, showName } = sessionData;
+    
+    const values = [[
+      new Date().toLocaleDateString(),
+      time,
+      showName || 'Unknown Show'
+    ]];
+    
+    const requestData = JSON.stringify({
+      values: values,
+      majorDimension: 'ROWS'
+    });
+    
+    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Sheet1!A1:append?valueInputOption=USER_ENTERED`;
+    
+    return new Promise((resolve) => {
+      const req = https.request(sheetsUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(requestData)
+        }
+      }, (res) => {
+        let responseData = '';
+        res.on('data', chunk => responseData += chunk);
+        res.on('end', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            console.log('✅ Successfully saved to Google Sheets');
+            console.log('📊 Saved data:', { date: new Date().toLocaleDateString(), time, showName });
+            resolve(true);
+          } else {
+            console.error('❌ Google Sheets API error:', res.statusCode, responseData);
+            resolve(false);
+          }
+        });
+      });
+      
+      req.on('error', (error) => {
+        console.error('❌ Failed to save to Google Sheets:', error.message);
+        resolve(false);
+      });
+      
+      req.setTimeout(10000, () => {
+        console.warn('❌ Google Sheets request timeout');
+        req.destroy();
+        resolve(false);
+      });
+      
+      req.write(requestData);
+      req.end();
+    });
+    
+  } catch (error) {
+    console.error('❌ Error in saveToGoogleSheets:', error.message);
+    return false;
+  }
+}
+
 // Simple HTTP server
 const server = http.createServer((req, res) => {
   const parsedUrl = url.parse(req.url, true);
@@ -118,31 +230,35 @@ const server = http.createServer((req, res) => {
     return;
   }
   
-  // Save session endpoint (POST)
+  // Save session endpoint (POST) - with Google Sheets integration
   if (pathname === '/api/save-session' && req.method === 'POST') {
     let body = '';
     req.on('data', chunk => {
       body += chunk.toString();
     });
     
-    req.on('end', () => {
+    req.on('end', async () => {
       try {
         const data = JSON.parse(body);
         console.log('Session data received:', data);
         
+        // Try to save to Google Sheets using service account
+        const saved = await saveToGoogleSheets(data);
+        
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
-          message: 'Session received successfully (standalone server)',
+          message: saved ? 'Session saved to Google Sheets!' : 'Session received (Google Sheets not configured)',
           data: {
             ...data,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            savedToSheets: saved
           }
         }));
       } catch (error) {
-        console.error('Error parsing session data:', error);
-        res.writeHead(400, { 'Content-Type': 'application/json' });
+        console.error('Error processing session data:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
-          message: 'Invalid JSON data',
+          message: 'Error saving session',
           error: error.message
         }));
       }

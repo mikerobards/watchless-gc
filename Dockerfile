@@ -81,5 +81,5 @@ RUN echo "=== Final server setup ===" && \
     echo "=== Node modules check ===" && \
     ls -la node_modules/ | head -5
 
-# Use minimal Express server with Google Sheets integration
-CMD ["node", "express-minimal.js"]
+# Use standalone server with Google Sheets integration
+CMD ["node", "standalone.js"]
