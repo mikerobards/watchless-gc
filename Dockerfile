@@ -8,12 +8,23 @@ COPY . .
 # Debug: Check what we have
 RUN echo "=== Project contents ===" && ls -la ./
 RUN echo "=== Client directory ===" && ls -la ./client/ || echo "client directory not found"
+RUN echo "=== Current working directory ===" && pwd
+RUN find /app -name "package.json" -type f 2>/dev/null || echo "No package.json files found"
 
-# Build client
+# Build client - work from the directory that actually contains package.json
 WORKDIR /app/client
-RUN echo "=== Package.json contents ===" && cat package.json
+RUN echo "=== Current directory after WORKDIR ===" && pwd && ls -la
 RUN echo "=== Node and npm versions ===" && node --version && npm --version
-RUN echo "=== Installing client dependencies ===" && npm install
+
+# Try to find and use package.json
+RUN if [ -f package.json ]; then \
+      echo "=== Package.json found, installing dependencies ==="; \
+      npm install; \
+    else \
+      echo "=== Package.json not found in current directory ==="; \
+      exit 1; \
+    fi
+
 RUN echo "=== Building client ===" && npm run build
 
 # Server stage
