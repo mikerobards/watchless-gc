@@ -1,0 +1,45 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log
+
+# Client development files
+client/node_modules/
+client/npm-debug.log
+client/src/
+client/public/
+client/.gitignore
+
+# Development and testing
+.git/
+.gitignore
+README.md
+.env
+.env.local
+.env.example
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Build artifacts (client build will be copied to server/public)
+client/build/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history

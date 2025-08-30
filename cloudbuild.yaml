@@ -1,0 +1,41 @@
+steps:
+  # Install dependencies and build client
+  - name: 'gcr.io/cloud-builders/npm'
+    dir: 'client'
+    args: ['install']
+    
+  - name: 'gcr.io/cloud-builders/npm'
+    dir: 'client'
+    args: ['run', 'build']
+    
+  # Copy client build to server's static folder
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        mkdir -p server/public
+        cp -r client/build/* server/public/
+        
+  # Install server dependencies
+  - name: 'gcr.io/cloud-builders/npm'
+    dir: 'server'
+    args: ['install', '--only=production']
+    
+  # Deploy to App Engine
+  - name: 'gcr.io/cloud-builders/gcloud'
+    dir: 'server'
+    args: ['app', 'deploy', '../app.yaml']
+    
+  # Alternative: Deploy to Cloud Run (comment out App Engine step above)
+  # - name: 'gcr.io/cloud-builders/docker'
+  #   args: ['build', '-t', 'gcr.io/$PROJECT_ID/watchless', '.']
+  # - name: 'gcr.io/cloud-builders/docker'  
+  #   args: ['push', 'gcr.io/$PROJECT_ID/watchless']
+  # - name: 'gcr.io/cloud-builders/gcloud'
+  #   args: ['run', 'deploy', 'watchless', '--image', 'gcr.io/$PROJECT_ID/watchless', '--platform', 'managed', '--region', 'us-central1']
+
+timeout: '1200s'
+
+substitutions:
+  _SERVICE_NAME: watchless
