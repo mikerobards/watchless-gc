@@ -1,0 +1,24 @@
+runtime: nodejs20
+
+automatic_scaling:
+  min_instances: 0
+  max_instances: 10
+
+env_variables:
+  NODE_ENV: production
+
+# Health check configuration
+readiness_check:
+  path: "/health"
+  check_interval_sec: 5
+  timeout_sec: 4
+  failure_threshold: 2
+  success_threshold: 2
+  app_start_timeout_sec: 300
+
+liveness_check:
+  path: "/health"
+  check_interval_sec: 30
+  timeout_sec: 4
+  failure_threshold: 4
+  success_threshold: 2
