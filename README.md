@@ -9,6 +9,8 @@ A full-stack timer application for tracking TV watching sessions with modal remi
 - **Session Tracking**: Automatic logging of watch time and show names to Google Sheets
 - **Audio Notifications**: Rich gong sound effects for attention-getting reminders
 - **Real-time Updates**: Live timer display with session persistence
+- **Time Formatting**: Session times automatically formatted as HH:MM:SS in Google Sheets (e.g., 73 seconds → 00:01:13)
+- **Cloud Deployment**: Deployed on Google Cloud Run for production use
 
 ## Architecture
 
@@ -54,12 +56,11 @@ npm install
 4. Configure Google Sheets API:
    - Create a service account in Google Cloud Console
    - Download credentials as `server/credentials.json`
-   - Update the spreadsheet ID in `server/index.js:9`
-
-5. Configure Google Sheets:
-   - Update spreadsheet ID in server configuration
+   - Update the spreadsheet ID in server configuration
 
 ## Running the Application
+
+### Local Development
 
 1. Start the server:
 ```bash
@@ -74,6 +75,14 @@ npm start
 ```
 
 3. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+### Production
+
+The application is deployed on Google Cloud Run: https://watchless-972793137170.us-central1.run.app
+
+- Uses service account authentication (no credentials.json needed)
+- Pre-built React files served directly from server
+- Automatic scaling and HTTPS
 
 ## Development Commands
 
@@ -90,9 +99,11 @@ npm start
 ## Configuration
 
 ### Google Sheets Integration
-- Service account credentials required in `server/credentials.json`
-- Spreadsheet ID hardcoded in server configuration
-- Sessions logged with timestamp, duration, and show name
+- **Local Development**: Service account credentials required in `server/credentials.json`
+- **Production**: Uses Cloud Run service account authentication automatically
+- Spreadsheet ID configurable via environment variable or hardcoded fallback
+- Sessions logged with timestamp, formatted duration (HH:MM:SS), and show name
+- Time automatically converts from seconds to readable format (e.g., 73s → 00:01:13)
 
 ### User Reminders
 - Modal dialog appears after 10 seconds of timer activity
