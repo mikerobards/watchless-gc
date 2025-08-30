@@ -56,12 +56,19 @@ app.post('/api/save-session', async (req, res) => {
     }
 
     // Convert seconds to HH:MM:SS format
+    console.log('Raw time received:', time, 'seconds');
     const hours = Math.floor(time / 3600);
     const minutes = Math.floor((time % 3600) / 60);
     const seconds = time % 60;
     const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    console.log('Formatted time:', formattedTime);
     
-    const newRow = [new Date().toLocaleDateString(), formattedTime, showName];
+    // Also create a decimal time value for Google Sheets (fraction of a day)
+    const decimalTime = time / 86400; // 86400 seconds in a day
+    console.log('Decimal time for Google Sheets:', decimalTime);
+    
+    const newRow = [new Date().toLocaleDateString(), formattedTime, decimalTime, showName];
+    console.log('Row to be saved:', newRow);
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
@@ -69,6 +76,7 @@ app.post('/api/save-session', async (req, res) => {
       valueInputOption: 'USER_ENTERED',
       resource: {
         values: [newRow],
+        majorDimension: 'ROWS'
       },
     });
 
