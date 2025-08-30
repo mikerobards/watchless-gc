@@ -2,9 +2,9 @@
 node_modules/
 */node_modules/
 
-# Ignore build outputs (will be built in container)
-client/build/
-server/public/
+# Keep pre-built React files for deployment
+# client/build/
+# server/public/
 
 # Development and testing files
 .git/
