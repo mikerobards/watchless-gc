@@ -26,9 +26,15 @@ RUN if [ -d "client" ] && [ -f "client/package.json" ]; then \
 RUN if [ -d "server" ] && [ -f "server/package.json" ]; then \
       echo "Installing server deps..." && \
       cd server && \
-      npm ci --only=production; \
+      echo "=== Server package.json ===" && \
+      cat package.json && \
+      echo "=== Running npm install ===" && \
+      npm install && \
+      echo "=== Checking installed modules ===" && \
+      ls -la node_modules/ | head -5; \
     else \
       echo "Error: No server directory or package.json"; \
+      ls -la server/ || echo "No server directory"; \
       exit 1; \
     fi
 
@@ -52,8 +58,15 @@ EXPOSE 8080
 ENV PORT=8080
 ENV NODE_ENV=production
 
-# Test that the server can start (quick test)
-RUN echo "Testing server startup..." && \
-    timeout 10s node index.js || echo "Server startup test completed"
+# Debug final setup
+RUN echo "=== Final server setup ===" && \
+    pwd && \
+    ls -la && \
+    echo "=== Public directory ===" && \
+    ls -la ./public/ 2>/dev/null || echo "No public directory" && \
+    echo "=== Package.json check ===" && \
+    ls -la package.json && \
+    echo "=== Node modules check ===" && \
+    ls -la node_modules/ | head -5
 
 CMD ["node", "index.js"]
