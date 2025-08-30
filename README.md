@@ -1,13 +1,13 @@
 # WatchLess
 
-A full-stack timer application for tracking TV watching sessions with push notification reminders and automatic data logging to Google Sheets.
+A full-stack timer application for tracking TV watching sessions with modal reminders and automatic data logging to Google Sheets.
 
 ## Features
 
 - **Timer Interface**: Clean, Material-UI based React interface for starting/stopping watch sessions
-- **Push Notifications**: "Still watching?" reminders after configurable timeout periods
+- **Modal Reminders**: "Still watching?" dialog with audio notifications after timeout periods
 - **Session Tracking**: Automatic logging of watch time and show names to Google Sheets
-- **Progressive Web App**: Service worker implementation for offline capabilities
+- **Audio Notifications**: Rich gong sound effects for attention-getting reminders
 - **Real-time Updates**: Live timer display with session persistence
 
 ## Architecture
@@ -15,13 +15,13 @@ A full-stack timer application for tracking TV watching sessions with push notif
 ### Client (`/client`)
 - React 19.1.1 application built with Create React App
 - Material-UI components for consistent design
-- Service worker for push notifications and PWA features
+- Modal dialogs for user interaction and reminders
 - Runs on port 3000 in development
 
 ### Server (`/server`) 
 - Express.js REST API server
 - Google Sheets API integration for data persistence
-- Web Push API for notification management
+- Session data handling and storage
 - CORS enabled for local development
 - Runs on port 3001
 
@@ -30,7 +30,6 @@ A full-stack timer application for tracking TV watching sessions with push notif
 ### Prerequisites
 - Node.js (version compatible with React 19.1.1)
 - Google Cloud Service Account with Sheets API access
-- VAPID keys for push notifications
 
 ### Installation
 
@@ -57,9 +56,8 @@ npm install
    - Download credentials as `server/credentials.json`
    - Update the spreadsheet ID in `server/index.js:9`
 
-5. Configure push notifications:
-   - Generate VAPID keys
-   - Update VAPID keys in both client and server files
+5. Configure Google Sheets:
+   - Update spreadsheet ID in server configuration
 
 ## Running the Application
 
@@ -96,10 +94,10 @@ npm start
 - Spreadsheet ID hardcoded in server configuration
 - Sessions logged with timestamp, duration, and show name
 
-### Push Notifications
-- VAPID keys configured in both client and server
-- Timeout currently set to 10 seconds for testing
-- Requires user permission for notifications
+### User Reminders
+- Modal dialog appears after 10 seconds of timer activity
+- Audio notification (gong sound) accompanies modal dialog
+- No permissions required - works automatically
 
 ## Security Note
 
