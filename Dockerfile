@@ -69,5 +69,5 @@ RUN echo "=== Final server setup ===" && \
     echo "=== Node modules check ===" && \
     ls -la node_modules/ | head -5
 
-# Use minimal working server for now
-CMD ["node", "minimal-test.js"]
+# Use standalone server with no dependencies
+CMD ["node", "standalone.js"]
