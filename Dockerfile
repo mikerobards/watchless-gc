@@ -1,11 +1,17 @@
 # Multi-stage build optimized for Cloud Run
 FROM node:18-alpine AS client-builder
 
+# Copy entire build context first
+WORKDIR /app
+COPY . .
+
+# Debug: Check what we have
+RUN echo "=== Project contents ===" && ls -la ./
+RUN echo "=== Client directory ===" && ls -la ./client/ || echo "client directory not found"
+
 # Build client
 WORKDIR /app/client
-COPY client/package.json client/package-lock.json ./
 RUN npm ci --only=production --silent
-COPY client/ .
 RUN npm run build
 
 # Server stage
@@ -13,12 +19,12 @@ FROM node:18-alpine AS server
 
 WORKDIR /app
 
-# Install server dependencies
-COPY server/package*.json ./
-RUN npm ci --only=production --silent
+# Copy project files
+COPY . .
 
-# Copy server source
-COPY server/ .
+# Install server dependencies
+WORKDIR /app/server
+RUN npm ci --only=production --silent
 
 # Copy built client files to serve as static content
 COPY --from=client-builder /app/client/build ./public
