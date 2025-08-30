@@ -32,9 +32,6 @@ steps:
 
 timeout: '1200s'
 
-# Logging configuration (required when using custom service account)
+# Logging configuration (required when using custom service account)  
 options:
   logging: CLOUD_LOGGING_ONLY
-
-substitutions:
-  _SERVICE_NAME: watchless
