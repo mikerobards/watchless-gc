@@ -11,15 +11,24 @@ RUN echo "=== Root contents ===" && ls -la
 RUN echo "=== Client contents ===" && ls -la client/ || echo "No client dir"
 RUN echo "=== Server contents ===" && ls -la server/ || echo "No server dir"
 
-# Build client if it exists
-RUN if [ -d "client" ] && [ -f "client/package.json" ]; then \
-      echo "Building client..." && \
+# Build React client with detailed logging
+RUN echo "=== Starting React Build Process ===" && \
+    if [ -d "client" ] && [ -f "client/package.json" ]; then \
+      echo "✅ Client directory and package.json found" && \
       cd client && \
+      echo "=== Installing client dependencies ===" && \
       npm install && \
+      echo "=== Running React build ===" && \
       npm run build && \
+      echo "=== Checking build output ===" && \
+      ls -la build/ && \
+      echo "=== Build files created ===" && \
+      ls -la build/static/ && \
       cd ..; \
     else \
-      echo "Skipping client build - no client directory or package.json"; \
+      echo "❌ Client directory or package.json missing" && \
+      ls -la client/ || echo "No client directory" && \
+      exit 1; \
     fi
 
 # Install server dependencies
@@ -41,15 +50,24 @@ RUN if [ -d "server" ] && [ -f "server/package.json" ]; then \
 # Set working directory to server first
 WORKDIR /app/server
 
-# Copy client build to server public directory (from server directory perspective)
-RUN if [ -d "../client/build" ]; then \
-      echo "Copying client build to public directory..."; \
-      cp -r ../client/build ./public; \
-      echo "Contents of public directory:"; \
-      ls -la ./public/ || echo "Public directory empty"; \
+# Copy client build to server public directory with verification
+RUN echo "=== Copying React Build to Server ===" && \
+    if [ -d "../client/build" ]; then \
+      echo "✅ Client build directory found" && \
+      ls -la ../client/build/ && \
+      echo "Copying build files to ./public/" && \
+      cp -r ../client/build/* ./public/ && \
+      echo "✅ Files copied successfully" && \
+      echo "Contents of public directory:" && \
+      ls -la ./public/ && \
+      echo "Checking for index.html:" && \
+      ls -la ./public/index.html && \
+      echo "✅ React build successfully deployed"; \
     else \
-      echo "Warning: No client build found at ../client/build"; \
-      echo "Creating empty public directory"; \
+      echo "❌ No client build found at ../client/build" && \
+      echo "Available directories:" && \
+      ls -la ../ && \
+      echo "Creating empty public directory as fallback" && \
       mkdir -p ./public; \
     fi
 
