@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+
+# Development files
+.git/
+.gitignore
+README.md
+.env
+.env.local
+.env.example
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts that will be built in container
+client/build/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Logs
+logs/
+*.log
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Cloud deployment files
+cloudbuild.yaml
+app.yaml
+.gcloudignore
+
+# Development dependencies
+.claude/
