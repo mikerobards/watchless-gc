@@ -14,7 +14,23 @@ app.use(cors());
 app.use(express.json());
 
 // Serve static files from React build
-app.use(express.static(path.join(__dirname, 'public')));
+const publicPath = path.join(__dirname, 'public');
+console.log('Setting up static files from:', publicPath);
+
+// Check if public directory exists and log contents
+try {
+  const fs = require('fs');
+  if (fs.existsSync(publicPath)) {
+    const files = fs.readdirSync(publicPath);
+    console.log('✅ Public directory found with files:', files.slice(0, 10));
+  } else {
+    console.log('❌ Public directory not found at:', publicPath);
+  }
+} catch (error) {
+  console.log('Error checking public directory:', error.message);
+}
+
+app.use(express.static(publicPath));
 
 // Lazy-load Google APIs only when needed
 let googleSheetsModule = null;

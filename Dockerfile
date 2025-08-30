@@ -69,5 +69,5 @@ RUN echo "=== Final server setup ===" && \
     echo "=== Node modules check ===" && \
     ls -la node_modules/ | head -5
 
-# Use standalone server with no dependencies
-CMD ["node", "standalone.js"]
+# Use the refactored Express server with React app
+CMD ["node", "safe-index.js"]
