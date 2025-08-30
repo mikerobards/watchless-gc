@@ -32,16 +32,18 @@ RUN echo "=== Using Pre-built React Files ===" && \
       exit 1; \
     fi
 
-# Install server dependencies
+# Install server dependencies (including Google APIs)
 RUN if [ -d "server" ] && [ -f "server/package.json" ]; then \
-      echo "Installing server deps..." && \
+      echo "Installing server deps with Google APIs support..." && \
       cd server && \
       echo "=== Server package.json ===" && \
       cat package.json && \
       echo "=== Running npm install ===" && \
       npm install && \
-      echo "=== Checking installed modules ===" && \
-      ls -la node_modules/ | head -5; \
+      echo "=== Checking Google APIs module ===" && \
+      ls -la node_modules/googleapis/ | head -3 || echo "googleapis not found" && \
+      echo "=== Checking Express module ===" && \
+      ls -la node_modules/express/ | head -3 || echo "express not found"; \
     else \
       echo "Error: No server directory or package.json"; \
       ls -la server/ || echo "No server directory"; \
@@ -79,5 +81,5 @@ RUN echo "=== Final server setup ===" && \
     echo "=== Node modules check ===" && \
     ls -la node_modules/ | head -5
 
-# Use standalone server with React support (no npm dependencies)
-CMD ["node", "standalone.js"]
+# Use minimal Express server with Google Sheets integration
+CMD ["node", "express-minimal.js"]
