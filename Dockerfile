@@ -21,23 +21,14 @@ RUN echo "=== Client directory check ===" && \
     fi
 RUN echo "=== Server contents ===" && ls -la server/ || echo "No server dir"
 
-# Build React client with detailed logging
-RUN echo "=== Starting React Build Process ===" && \
-    if [ -d "client" ] && [ -f "client/package.json" ]; then \
-      echo "✅ Client directory and package.json found" && \
-      cd client && \
-      echo "=== Installing client dependencies ===" && \
-      npm install && \
-      echo "=== Running React build ===" && \
-      npm run build && \
-      echo "=== Checking build output ===" && \
-      ls -la build/ && \
-      echo "=== Build files created ===" && \
-      ls -la build/static/ && \
-      cd ..; \
+# Skip React build - using pre-built files from server/public/
+RUN echo "=== Using Pre-built React Files ===" && \
+    echo "Checking for pre-built React files in server/public/" && \
+    ls -la server/public/ && \
+    if [ -f "server/public/index.html" ]; then \
+      echo "✅ Pre-built React app found in server/public/"; \
     else \
-      echo "❌ Client directory or package.json missing" && \
-      ls -la client/ || echo "No client directory" && \
+      echo "❌ No pre-built React files found"; \
       exit 1; \
     fi
 
@@ -60,25 +51,16 @@ RUN if [ -d "server" ] && [ -f "server/package.json" ]; then \
 # Set working directory to server first
 WORKDIR /app/server
 
-# Copy client build to server public directory with verification
-RUN echo "=== Copying React Build to Server ===" && \
-    if [ -d "../client/build" ]; then \
-      echo "✅ Client build directory found" && \
-      ls -la ../client/build/ && \
-      echo "Copying build files to ./public/" && \
-      cp -r ../client/build/* ./public/ && \
-      echo "✅ Files copied successfully" && \
-      echo "Contents of public directory:" && \
-      ls -la ./public/ && \
-      echo "Checking for index.html:" && \
-      ls -la ./public/index.html && \
-      echo "✅ React build successfully deployed"; \
+# Verify React files are already in place
+RUN echo "=== Verifying React Files in Public Directory ===" && \
+    echo "Contents of public directory:" && \
+    ls -la ./public/ && \
+    if [ -f "./public/index.html" ]; then \
+      echo "✅ React index.html found" && \
+      echo "✅ React build successfully available"; \
     else \
-      echo "❌ No client build found at ../client/build" && \
-      echo "Available directories:" && \
-      ls -la ../ && \
-      echo "Creating empty public directory as fallback" && \
-      mkdir -p ./public; \
+      echo "❌ React files not found in public directory" && \
+      exit 1; \
     fi
 
 # Expose port and set environment
