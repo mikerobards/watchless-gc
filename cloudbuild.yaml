@@ -1,41 +1,35 @@
 steps:
-  # Install dependencies and build client
-  - name: 'gcr.io/cloud-builders/npm'
-    dir: 'client'
-    args: ['install']
-    
-  - name: 'gcr.io/cloud-builders/npm'
-    dir: 'client'
-    args: ['run', 'build']
-    
-  # Copy client build to server's static folder
-  - name: 'gcr.io/cloud-builders/gcloud'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        mkdir -p server/public
-        cp -r client/build/* server/public/
-        
-  # Install server dependencies
-  - name: 'gcr.io/cloud-builders/npm'
-    dir: 'server'
-    args: ['install', '--only=production']
-    
-  # Deploy to Cloud Run
+  # Build and push Docker image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/$PROJECT_ID/watchless', '.']
+    args: [
+      'build', 
+      '-t', 'gcr.io/$PROJECT_ID/watchless:$COMMIT_SHA',
+      '-t', 'gcr.io/$PROJECT_ID/watchless:latest',
+      '--cache-from', 'gcr.io/$PROJECT_ID/watchless:latest',
+      '.'
+    ]
     
   - name: 'gcr.io/cloud-builders/docker'  
-    args: ['push', 'gcr.io/$PROJECT_ID/watchless']
+    args: ['push', 'gcr.io/$PROJECT_ID/watchless:$COMMIT_SHA']
     
+  - name: 'gcr.io/cloud-builders/docker'  
+    args: ['push', 'gcr.io/$PROJECT_ID/watchless:latest']
+    
+  # Deploy to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
-    args: ['run', 'deploy', 'watchless', '--image', 'gcr.io/$PROJECT_ID/watchless', '--platform', 'managed', '--region', 'us-central1', '--allow-unauthenticated']
-    
-  # Alternative: Deploy to App Engine (comment out Cloud Run steps above)
-  # - name: 'gcr.io/cloud-builders/gcloud'
-  #   dir: 'server'
-  #   args: ['app', 'deploy', '../app.yaml']
+    args: [
+      'run', 'deploy', 'watchless',
+      '--image', 'gcr.io/$PROJECT_ID/watchless:$COMMIT_SHA',
+      '--platform', 'managed',
+      '--region', 'us-central1',
+      '--allow-unauthenticated',
+      '--port', '8080',
+      '--memory', '512Mi',
+      '--cpu', '1',
+      '--min-instances', '0',
+      '--max-instances', '10',
+      '--timeout', '300s'
+    ]
 
 timeout: '1200s'
 

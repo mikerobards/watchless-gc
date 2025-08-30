@@ -1,26 +1,37 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { google } = require('googleapis');
 
 const app = express();
-const port = 3001;
+const port = process.env.PORT || 8080;
 
-const SPREADSHEET_ID = '1DLhsYv2YBgth7wQI2i37sX0QvmEj3ig9LMeMRryioyY';
+const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || '1DLhsYv2YBgth7wQI2i37sX0QvmEj3ig9LMeMRryioyY';
 
 app.use(cors());
 app.use(express.json());
 
+// Serve static files from React build
+app.use(express.static(path.join(__dirname, 'public')));
+
 async function getAuth() {
   const auth = new google.auth.GoogleAuth({
-    keyFile: 'credentials.json',
+    // In Cloud Run, use service account attached to the service
+    // or credentials from environment variables
     scopes: 'https://www.googleapis.com/auth/spreadsheets',
   });
   const client = await auth.getClient();
   return google.sheets({ version: 'v4', auth: client });
 }
 
+// Health check endpoint for Cloud Run
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
+});
+
+// Serve React app for all non-API routes
 app.get('/', (req, res) => {
-  res.send('WatchLess server is running!');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.post('/api/save-session', async (req, res) => {
@@ -49,6 +60,12 @@ app.post('/api/save-session', async (req, res) => {
 
 
 
-app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
+// Catch all handler: send back React's index.html file for client-side routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Server listening on port ${port}`);
+  console.log(`Environment: ${process.env.NODE_ENV}`);
 });
