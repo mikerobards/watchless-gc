@@ -1,6 +1,6 @@
 # WatchLess
 
-A full-stack timer application for tracking TV watching sessions with modal reminders and automatic data logging to Google Sheets.
+A full-stack timer app for tracking TV watching sessions with modal reminders and automatic data logging to Google Sheets.
 
 ## Features
 
@@ -15,12 +15,14 @@ A full-stack timer application for tracking TV watching sessions with modal remi
 ## Architecture
 
 ### Client (`/client`)
+
 - React 19.1.1 application built with Create React App
 - Material-UI components for consistent design
 - Modal dialogs for user interaction and reminders
 - Runs on port 3000 in development
 
-### Server (`/server`) 
+### Server (`/server`)
+
 - Express.js REST API server
 - Google Sheets API integration for data persistence
 - Session data handling and storage
@@ -30,24 +32,28 @@ A full-stack timer application for tracking TV watching sessions with modal remi
 ## Setup
 
 ### Prerequisites
+
 - Node.js (version compatible with React 19.1.1)
 - Google Cloud Service Account with Sheets API access
 
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/mikerobards/watchless-gc.git
 cd watchless
 ```
 
 2. Install server dependencies:
+
 ```bash
 cd server
 npm install
 ```
 
 3. Install client dependencies:
+
 ```bash
 cd ../client
 npm install
@@ -63,12 +69,14 @@ npm install
 ### Local Development
 
 1. Start the server:
+
 ```bash
 cd server
 npm start
 ```
 
 2. Start the client (in a new terminal):
+
 ```bash
 cd client
 npm start
@@ -87,10 +95,12 @@ The application is deployed on Google Cloud Run: https://watchless-972793137170.
 ## Development Commands
 
 ### Server
+
 - `npm start` - Run with nodemon (auto-restart on changes)
 - `npm test` - Run tests (placeholder)
 
 ### Client
+
 - `npm start` - Development server
 - `npm run build` - Production build
 - `npm test` - Run Jest tests
@@ -99,6 +109,7 @@ The application is deployed on Google Cloud Run: https://watchless-972793137170.
 ## Configuration
 
 ### Google Sheets Integration
+
 - **Local Development**: Service account credentials required in `server/credentials.json`
 - **Production**: Uses Cloud Run service account authentication automatically
 - Spreadsheet ID configurable via environment variable or hardcoded fallback
@@ -106,6 +117,7 @@ The application is deployed on Google Cloud Run: https://watchless-972793137170.
 - Time automatically converts from seconds to readable format (e.g., 73s → 00:01:13)
 
 ### User Reminders
+
 - Modal dialog appears after 10 seconds of timer activity
 - Audio notification (gong sound) accompanies modal dialog
 - No permissions required - works automatically
