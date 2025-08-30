@@ -55,7 +55,13 @@ app.post('/api/save-session', async (req, res) => {
       return;
     }
 
-    const newRow = [new Date().toLocaleDateString(), time, showName];
+    // Convert seconds to HH:MM:SS format
+    const hours = Math.floor(time / 3600);
+    const minutes = Math.floor((time % 3600) / 60);
+    const seconds = time % 60;
+    const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    
+    const newRow = [new Date().toLocaleDateString(), formattedTime, showName];
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
