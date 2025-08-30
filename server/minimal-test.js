@@ -47,63 +47,35 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// Serve static files if they exist
-const fs = require('fs');
-const publicPath = path.join(__dirname, 'public');
+// Simple fallback route for root
+app.get('/', (req, res) => {
+  console.log('Root route requested');
+  res.send(`
+    <html>
+      <body>
+        <h1>WatchLess Server Running</h1>
+        <p>Port: ${port}</p>
+        <p>Environment: ${process.env.NODE_ENV}</p>
+        <p>Time: ${new Date().toISOString()}</p>
+        <p><a href="/health">Health Check</a> | <a href="/api/status">Server Status</a></p>
+        <p>React app would be served here once static files are configured.</p>
+      </body>
+    </html>
+  `);
+});
 
-console.log('=== Static File Setup ===');
-console.log('Server directory:', __dirname);
-console.log('Looking for public directory at:', publicPath);
-
-try {
-  if (fs.existsSync(publicPath)) {
-    console.log('✅ Public directory found!');
-    const files = fs.readdirSync(publicPath);
-    console.log('Files in public directory:', files.slice(0, 15));
-    
-    // Check for index.html specifically
-    const indexPath = path.join(publicPath, 'index.html');
-    if (fs.existsSync(indexPath)) {
-      console.log('✅ index.html found!');
-    } else {
-      console.log('❌ index.html NOT found!');
-    }
-    
-    // Enable static file serving
-    app.use(express.static(publicPath));
-    console.log('✅ Static file serving enabled');
-    
-  } else {
-    console.log('❌ Public directory not found');
-    console.log('Contents of server directory:');
-    const serverFiles = fs.readdirSync(__dirname);
-    console.log(serverFiles);
-  }
-} catch (error) {
-  console.error('Error setting up static files:', error);
-}
-
-// Catch-all route for React Router (must be last)
+// Basic catch-all for other routes
 app.get('*', (req, res) => {
-  const indexPath = path.join(publicPath, 'index.html');
-  console.log(`Request for ${req.path}`);
-  
-  if (fs.existsSync(indexPath)) {
-    console.log(`Serving index.html for ${req.path}`);
-    res.sendFile(indexPath);
-  } else {
-    console.log(`index.html not found, sending error for ${req.path}`);
-    res.status(404).send(`
-      <html>
-        <body>
-          <h1>WatchLess Server Running</h1>
-          <p>React app not available (no index.html found)</p>
-          <p>Server: ${process.env.NODE_ENV}</p>
-          <p>Try: <a href="/health">/health</a> or <a href="/api/status">/api/status</a></p>
-        </body>
-      </html>
-    `);
-  }
+  console.log(`Route requested: ${req.path}`);
+  res.status(404).send(`
+    <html>
+      <body>
+        <h1>Route Not Found</h1>
+        <p>Path: ${req.path}</p>
+        <p><a href="/">Home</a> | <a href="/health">Health</a> | <a href="/api/status">Status</a></p>
+      </body>
+    </html>
+  `);
 });
 
 // Start server
