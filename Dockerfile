@@ -1,5 +1,5 @@
 # Multi-stage build optimized for Cloud Run
-FROM node:18-alpine AS client-builder
+FROM node:20-alpine AS client-builder
 
 # Copy entire build context first
 WORKDIR /app
@@ -11,11 +11,13 @@ RUN echo "=== Client directory ===" && ls -la ./client/ || echo "client director
 
 # Build client
 WORKDIR /app/client
-RUN echo "=== Installing client dependencies ===" && npm ci --silent
+RUN echo "=== Package.json contents ===" && cat package.json
+RUN echo "=== Node and npm versions ===" && node --version && npm --version
+RUN echo "=== Installing client dependencies ===" && npm install
 RUN echo "=== Building client ===" && npm run build
 
 # Server stage
-FROM node:18-alpine AS server
+FROM node:20-alpine AS server
 
 WORKDIR /app
 
